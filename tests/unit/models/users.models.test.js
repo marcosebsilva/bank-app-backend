@@ -56,3 +56,38 @@ describe('CREATE', async () => {
     expect(query.account_owner.cpf).to.be.equal(VALID_CPF);
   });
 });
+
+describe('FIND BY CPF', async () => {
+  const { VALID_NAME, VALID_CPF } = TEST_VALUES;
+  describe('if the user exists', async () => {
+    before(async () => {
+      const conn = await connection();
+      await conn.collection('users').insertOne({
+        account_owner: {
+          cpf: VALID_CPF,
+          name: VALID_NAME,
+        },
+        credit: 0,
+      });
+    });
+    after(async () => {
+      const conn = await connection();
+      await conn.collection('users').drop();
+    });
+    it('should return the right user', async () => {
+      const result = await usersModels.findByCpf(VALID_CPF);
+      expect(result).to.be.a('object')
+        .that.has.all.keys('_id', 'account_owner', 'credit');
+      expect(result).to.have.nested.property('account_owner.name');
+      expect(result).to.have.nested.property('account_owner.cpf');
+      expect(result.account_owner.cpf).to.be.equal(VALID_CPF);
+    });
+  });
+  describe('if the user does not exists', async () => {
+    it('should return nothing', async () => {
+      const result = await usersModels.findByCpf(VALID_CPF);
+      expect(result).to.not.be.a('object');
+      expect(result).to.be.a('null');
+    });
+  });
+});
