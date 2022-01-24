@@ -1,0 +1,6 @@
+{
+  "VALID_CPF": 15502774651,
+ "INVALID_CPF": 33345,
+  "VALID_NAME": "Joaquin Arruda Campos",
+  "INVALID_NAME":"tes"
+}

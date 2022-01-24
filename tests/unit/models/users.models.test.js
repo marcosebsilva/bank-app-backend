@@ -11,15 +11,10 @@ const { MongoClient } = require('mongodb');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 const connection = require('../../../models/connection');
 const usersModels = require('../../../models/userModels');
+const testValues = require('../utils/testValues.json');
 
 let memoryServer;
 let mockConnection;
-const TEST_VALUES = {
-  VALID_CPF: 15502774651,
-  INVALID_CPF: 33345,
-  VALID_NAME: 'Joaquin Arruda Campos',
-  INVALID_NAME: 'tes',
-};
 before(async () => {
   memoryServer = await MongoMemoryServer.create();
   const URLMock = await memoryServer.getUri();
@@ -40,7 +35,7 @@ describe('CREATE', async () => {
     const conn = await connection();
     await conn.collection('users').drop();
   });
-  const { VALID_CPF, VALID_NAME } = TEST_VALUES;
+  const { VALID_CPF, VALID_NAME } = testValues;
   it('returns the expected object', async () => {
     const result = await usersModels.create(VALID_NAME, VALID_CPF);
     expect(result).to.be.a('object');
@@ -58,7 +53,7 @@ describe('CREATE', async () => {
 });
 
 describe('FIND BY CPF', async () => {
-  const { VALID_NAME, VALID_CPF } = TEST_VALUES;
+  const { VALID_NAME, VALID_CPF } = testValues;
   describe('if the user exists', async () => {
     before(async () => {
       const conn = await connection();
