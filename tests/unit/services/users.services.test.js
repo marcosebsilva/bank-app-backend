@@ -1,5 +1,4 @@
 const sinon = require('sinon');
-const chaiAsPromised = require('chai-as-promised');
 const {
   describe,
   it,
@@ -13,7 +12,9 @@ const userModels = require('../../../models/userModels');
 const CustomError = require('../../../utils/CustomError');
 const statusCode = require('../../../utils/statusCode.json');
 
-use(chaiAsPromised);
+use(require('chai-as-promised'));
+use(require('sinon-chai'));
+
 describe('SERVICES', async () => {
   describe('validateBody()', async () => {
     const {
@@ -62,7 +63,10 @@ describe('SERVICES', async () => {
         await expect(userServices.validateBody({ cpf: VALID_CPF, name: VALID_NAME }))
           .to.eventually.be.rejectedWith('User already registered.')
           .and.be.an.instanceOf(CustomError)
-          .and.have.property('status', statusCode.ALREADY_REGISTERED);
+          .and.have.property('status', statusCode.ALREADY_REGISTERED)
+          .then(() => {
+            expect(userModels.findByCpf.calledWith(VALID_CPF)).to.be.equal(true);
+          });
       });
       it('should throw an CustomError if NAME is invalid', async () => {
         await expect(userServices.validateBody({ cpf: VALID_CPF, name: INVALID_NAME }))
