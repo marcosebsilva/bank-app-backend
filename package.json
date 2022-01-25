@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "npm test"
+    "test": "npx mocha tests/unit/*$NAME*/**/*.test.js"
   },
   "author": "dusdoom.dev@gmail.com",
   "license": "ISC",
@@ -27,6 +27,7 @@
     "express": "^4.17.2",
     "joi": "^17.5.0",
     "mongodb": "^4.3.1",
-    "mongodb-memory-server": "^8.2.0"
+    "mongodb-memory-server": "^8.2.0",
+    "sinon-chai": "^3.7.0"
   }
 }
