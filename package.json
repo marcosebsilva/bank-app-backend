@@ -4,6 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "dev": "nodemon index.js",
+    "start": "node index.js",
     "test": "npx mocha tests/unit/*$NAME*/**/*.test.js"
   },
   "author": "dusdoom.dev@gmail.com",
@@ -23,6 +25,7 @@
     "sinon": "^12.0.1"
   },
   "dependencies": {
+    "bcrypt": "^5.0.1",
     "body-parser": "^1.19.1",
     "express": "^4.17.2",
     "joi": "^17.5.0",
