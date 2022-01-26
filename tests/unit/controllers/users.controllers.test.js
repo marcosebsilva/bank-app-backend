@@ -35,7 +35,7 @@ describe('CONTROLLERS', async () => {
       });
       it('should call error middleware', async () => {
         await userControllers.create(request, response, next);
-        expect(next.calledWith(genericError)).to.be.equal(true);
+        expect(next).to.have.been.calledWith(genericError);
       });
     });
     describe('if the body is right', () => {
@@ -47,7 +47,7 @@ describe('CONTROLLERS', async () => {
       });
       it('should return status 201', async () => {
         await userControllers.create(request, response, next);
-        expect(response.sendStatus.calledWith(statusCode.CREATED)).to.be.equal(true);
+        expect(response.sendStatus).to.have.been.calledWith(statusCode.CREATED);
       });
     });
   });

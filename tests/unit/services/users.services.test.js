@@ -23,6 +23,7 @@ describe('SERVICES', async () => {
     VALID_CPF,
     VALID_NAME,
     VALID_PASSWORD,
+    INVALID_CPF,
   } = testValues;
 
   describe('create()', async () => {
@@ -46,7 +47,7 @@ describe('SERVICES', async () => {
         await expect(userServices.create(badBody))
           .to.eventually.be.rejectedWith('foo')
           .then(() => {
-            expect(serviceHelpers.validateRegisterBody.calledWith(badBody)).to.be.equal(true);
+            expect(serviceHelpers.validateRegisterBody).to.have.been.calledWith(badBody);
           });
       });
       it('should not call userModels.create()', async () => {
