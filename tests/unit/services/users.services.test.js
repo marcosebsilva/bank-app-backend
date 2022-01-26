@@ -17,7 +17,7 @@ use(require('sinon-chai'));
 use(require('chai-as-promised'));
 
 describe('SERVICES', async () => {
-  describe('create()', async () => {
+  describe.only('create()', async () => {
     let spyCreate;
     before(() => {
       spyCreate = sinon.spy(userModels, 'create');
@@ -27,7 +27,7 @@ describe('SERVICES', async () => {
     });
     describe('if the body is wrong', async () => {
       before(() => {
-        sinon.stub(serviceHelpers, 'validateRegisterBody').returns(new Error('foo'));
+        sinon.stub(serviceHelpers, 'validateRegisterBody').returns(new CustomError('foo', 'bar'));
       });
       after(() => {
         serviceHelpers.validateRegisterBody.restore();
@@ -47,9 +47,10 @@ describe('SERVICES', async () => {
             expect(spyCreate).to.have.not.been.called;
           });
       });
-      it('should throw an error', async () => {
+      it('should be rejected with a CustomError', async () => {
         await expect(userServices.create({}))
-          .to.eventually.throw;
+          .to.eventually.be.rejectedWith('foo')
+          .and.be.an.instanceOf(CustomError);
         // should search if this is the best way to do it
       });
     });
@@ -76,7 +77,7 @@ describe('SERVICES', async () => {
             expect(spyCreate).to.have.not.been.called;
           });
       });
-      it('should throw the right error', async () => {
+      it('should be rejected with the right error', async () => {
         await expect(userServices.create({}))
           .to.eventually.rejectedWith('User already registered')
           .and.be.an.instanceOf(CustomError)
