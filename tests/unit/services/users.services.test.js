@@ -10,7 +10,6 @@ const { expect, use } = require('chai');
 const bcrypt = require('bcrypt');
 const userServices = require('../../../services/userServices');
 const serviceHelpers = require('../../../services/serviceHelpers');
-const testValues = require('../utils/testValues');
 const userModels = require('../../../models/userModels');
 const CustomError = require('../../../utils/CustomError');
 
@@ -18,104 +17,91 @@ use(require('sinon-chai'));
 use(require('chai-as-promised'));
 
 describe('SERVICES', async () => {
-  const {
-    INVALID_NAME,
-    VALID_CPF,
-    VALID_NAME,
-    VALID_PASSWORD,
-    INVALID_CPF,
-  } = testValues;
-
   describe('create()', async () => {
+    let spyCreate;
+    before(() => {
+      spyCreate = sinon.spy(userModels, 'create');
+    });
+    after(() => {
+      spyCreate.restore();
+    });
     describe('if the body is wrong', async () => {
-      const badBody = {
-        name: INVALID_NAME,
-        cpf: VALID_CPF,
-        password: VALID_PASSWORD,
-      };
       before(() => {
         sinon.stub(serviceHelpers, 'validateRegisterBody').returns(new Error('foo'));
-        sinon.stub(userModels, 'create').resolves(true);
-        sinon.stub(userModels, 'findByCpf').resolves(false);
       });
       after(() => {
         serviceHelpers.validateRegisterBody.restore();
         userModels.create.restore();
-        userModels.findByCpf.restore();
       });
       it('should call validateRegisterBody()', async () => {
-        await expect(userServices.create(badBody))
-          .to.eventually.be.rejectedWith('foo')
+        await expect(userServices.create({}))
+          .to.eventually.be.rejected
           .then(() => {
-            expect(serviceHelpers.validateRegisterBody).to.have.been.calledWith(badBody);
+            expect(serviceHelpers.validateRegisterBody).to.have.been.calledWith({});
           });
       });
       it('should not call userModels.create()', async () => {
-        await expect(userServices.create(badBody))
-          .to.be.rejectedWith('foo')
+        await expect(userServices.create({}))
+          .to.be.rejected
           .then(() => {
-            expect(userModels.create).to.have.not.been.called;
+            expect(spyCreate).to.have.not.been.called;
           });
       });
       it('should throw an error', async () => {
-        await expect(userServices.create(badBody))
+        await expect(userServices.create({}))
           .to.eventually.throw;
         // should search if this is the best way to do it
       });
     });
     describe('if the user is already registered', async () => {
-      const badBody = {
-        name: INVALID_NAME,
-        cpf: VALID_CPF,
-        password: VALID_PASSWORD,
-      };
       before(() => {
         sinon.stub(userModels, 'findByCpf').resolves(true);
         sinon.stub(serviceHelpers, 'validateRegisterBody').returns(true);
-        sinon.stub(userModels, 'create').resolves(true);
       });
       after(() => {
         userModels.findByCpf.restore();
         serviceHelpers.validateRegisterBody.restore();
-        userModels.create.restore();
       });
-      it('should not call userModels.create()', async () => {
-        await expect(userServices.create(badBody))
-          .to.be.rejectedWith('User already registered.')
+      it('should call userModes.findByCpf', async () => {
+        await expect(userServices.create({}))
+          .to.be.rejected
           .then(() => {
-            expect(userModels.create).to.have.not.been.called;
+            expect(userModels.findByCpf).to.have.been.called;
           });
       });
-      it('should throw an error', async () => {
-        await expect(userServices.create(badBody))
+      it('should not call userModels.create()', async () => {
+        await expect(userServices.create({}))
+          .to.be.rejected
+          .then(() => {
+            expect(spyCreate).to.have.not.been.called;
+          });
+      });
+      it('should throw the right error', async () => {
+        await expect(userServices.create({}))
           .to.eventually.rejectedWith('User already registered')
           .and.be.an.instanceOf(CustomError)
           .and.have.property('status', 409);
       });
     });
     describe('if the body is right', async () => {
-      const goodBody = {
-        name: VALID_NAME,
-        cpf: VALID_CPF,
-        password: VALID_PASSWORD,
-      };
-      const spyBcrypt = sinon.spy(bcrypt, 'hash');
       before(() => {
-        sinon.stub(userModels, 'create').resolves(true);
         sinon.stub(serviceHelpers, 'validateRegisterBody').returns(true);
+        sinon.stub(bcrypt, 'hash').resolves(true);
+        sinon.stub(userModels, 'create').resolves(true);
         sinon.stub(userModels, 'findByCpf').resolves(false);
       });
       after(() => {
-        userModels.create.restore();
         serviceHelpers.validateRegisterBody.restore();
+        userModels.findByCpf.restore();
         bcrypt.hash.restore();
+        userModels.create.restore();
       });
       it('should call bcrypt.hash() to encrypt password', async () => {
-        await userServices.create(goodBody);
-        expect(spyBcrypt).to.have.been.called;
+        await userServices.create({});
+        expect(bcrypt.hash).to.have.been.called;
       });
       it('should call userModels.create()', async () => {
-        await userServices.create(goodBody);
+        await userServices.create({});
         expect(userModels.create).to.have.been.called;
       });
     });
