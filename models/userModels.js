@@ -1,11 +1,12 @@
 const connection = require('./connection');
 
-const create = async (name, cpf) => {
+const create = async (name, cpf, password) => {
   const conn = await connection();
   const query = await conn.collection('users').insertOne({
     account_owner: {
       name,
       cpf,
+      password,
     },
     credit: 0,
   });
