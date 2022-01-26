@@ -9,7 +9,7 @@ const { expect } = require('chai');
 
 const { MongoClient } = require('mongodb');
 const { MongoMemoryServer } = require('mongodb-memory-server');
-const connection = require('../../../models/connection');
+// const connection = require('../../../models/connection');
 const usersModels = require('../../../models/userModels');
 const testValues = require('../utils/testValues.json');
 
@@ -32,8 +32,8 @@ after(async () => {
 describe('MODELS', async () => {
   describe('create()', async () => {
     after(async () => {
-      const conn = await connection();
-      await conn.collection('users').drop();
+      const conn = await mockConnection;
+      await conn.db('awsome_bank').collection('users').drop();
     });
     const { VALID_CPF, VALID_NAME } = testValues;
     it('returns the expected object', async () => {
@@ -42,8 +42,8 @@ describe('MODELS', async () => {
       expect(result).to.have.all.keys('acknowledged', 'insertedId');
     });
     it('creates the user in the DB', async () => {
-      const conn = await connection();
-      const query = await conn.collection('users').findOne({ 'account_owner.cpf': VALID_CPF });
+      const conn = await mockConnection;
+      const query = await conn.db('awsome_bank').collection('users').findOne({ 'account_owner.cpf': VALID_CPF });
       expect(query).to.be.a('object')
         .that.has.all.keys('_id', 'account_owner', 'credit');
       expect(query).to.have.nested.property('account_owner.name');
@@ -56,8 +56,8 @@ describe('MODELS', async () => {
     const { VALID_NAME, VALID_CPF } = testValues;
     describe('if the user exists', async () => {
       before(async () => {
-        const conn = await connection();
-        await conn.collection('users').insertOne({
+        const conn = await mockConnection;
+        await conn.db('awsome_bank').collection('users').insertOne({
           account_owner: {
             cpf: VALID_CPF,
             name: VALID_NAME,
@@ -66,8 +66,8 @@ describe('MODELS', async () => {
         });
       });
       after(async () => {
-        const conn = await connection();
-        await conn.collection('users').drop();
+        const conn = await mockConnection;
+        await conn.db('awsome_bank').collection('users').drop();
       });
       it('should return the right user', async () => {
         const result = await usersModels.findByCpf(VALID_CPF);
