@@ -11,6 +11,7 @@ const userServices = require('../../../services/userServices');
 const serviceHelpers = require('../../../services/serviceHelpers');
 const testValues = require('../utils/testValues.json');
 const userModels = require('../../../models/userModels');
+const CustomError = require('../../../utils/CustomError');
 
 use(require('sinon-chai'));
 use(require('chai-as-promised'));
@@ -31,10 +32,12 @@ describe('SERVICES', async () => {
       before(() => {
         sinon.stub(serviceHelpers, 'validateBody').returns(new Error('foo'));
         sinon.stub(userModels, 'create').resolves(true);
+        sinon.stub(userModels, 'findByCpf').resolves(false);
       });
       after(() => {
         serviceHelpers.validateBody.restore();
         userModels.create.restore();
+        userModels.findByCpf.restore();
       });
       it('should call validateBody()', async () => {
         await expect(userServices.create(badBody))
@@ -56,6 +59,35 @@ describe('SERVICES', async () => {
         // should search if this is the best way to do it
       });
     });
+    describe('if the user is already registered', async () => {
+      const badBody = {
+        name: INVALID_NAME,
+        cpf: VALID_CPF,
+      };
+      before(() => {
+        sinon.stub(userModels, 'findByCpf').resolves(true);
+        sinon.stub(serviceHelpers, 'validateBody').returns(true);
+        sinon.stub(userModels, 'create').resolves(true);
+      });
+      after(() => {
+        userModels.findByCpf.restore();
+        serviceHelpers.validateBody.restore();
+        userModels.create.restore();
+      });
+      it('should not call userModels.create()', async () => {
+        await expect(userServices.create(badBody))
+          .to.be.rejectedWith('User already registered.')
+          .then(() => {
+            expect(userModels.create).to.have.not.been.called;
+          });
+      });
+      it('should throw an error', async () => {
+        await expect(userServices.create(badBody))
+          .to.eventually.rejectedWith('User already registered')
+          .and.be.an.instanceOf(CustomError)
+          .and.have.property('status', 409);
+      });
+    });
     describe('if the user is right', async () => {
       const goodBody = {
         name: VALID_NAME,
@@ -64,6 +96,7 @@ describe('SERVICES', async () => {
       before(() => {
         sinon.stub(userModels, 'create').resolves(true);
         sinon.stub(serviceHelpers, 'validateBody').returns(true);
+        sinon.stub(userModels, 'findByCpf').resolves(false);
       });
       after(() => {
         userModels.create.restore();
