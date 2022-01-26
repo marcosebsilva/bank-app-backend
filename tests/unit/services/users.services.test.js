@@ -33,20 +33,20 @@ describe('SERVICES', async () => {
         password: VALID_PASSWORD,
       };
       before(() => {
-        sinon.stub(serviceHelpers, 'validateBody').returns(new Error('foo'));
+        sinon.stub(serviceHelpers, 'validateRegisterBody').returns(new Error('foo'));
         sinon.stub(userModels, 'create').resolves(true);
         sinon.stub(userModels, 'findByCpf').resolves(false);
       });
       after(() => {
-        serviceHelpers.validateBody.restore();
+        serviceHelpers.validateRegisterBody.restore();
         userModels.create.restore();
         userModels.findByCpf.restore();
       });
-      it('should call validateBody()', async () => {
+      it('should call validateRegisterBody()', async () => {
         await expect(userServices.create(badBody))
           .to.eventually.be.rejectedWith('foo')
           .then(() => {
-            expect(serviceHelpers.validateBody.calledWith(badBody)).to.be.equal(true);
+            expect(serviceHelpers.validateRegisterBody.calledWith(badBody)).to.be.equal(true);
           });
       });
       it('should not call userModels.create()', async () => {
@@ -70,12 +70,12 @@ describe('SERVICES', async () => {
       };
       before(() => {
         sinon.stub(userModels, 'findByCpf').resolves(true);
-        sinon.stub(serviceHelpers, 'validateBody').returns(true);
+        sinon.stub(serviceHelpers, 'validateRegisterBody').returns(true);
         sinon.stub(userModels, 'create').resolves(true);
       });
       after(() => {
         userModels.findByCpf.restore();
-        serviceHelpers.validateBody.restore();
+        serviceHelpers.validateRegisterBody.restore();
         userModels.create.restore();
       });
       it('should not call userModels.create()', async () => {
@@ -101,12 +101,12 @@ describe('SERVICES', async () => {
       const spyBcrypt = sinon.spy(bcrypt, 'hash');
       before(() => {
         sinon.stub(userModels, 'create').resolves(true);
-        sinon.stub(serviceHelpers, 'validateBody').returns(true);
+        sinon.stub(serviceHelpers, 'validateRegisterBody').returns(true);
         sinon.stub(userModels, 'findByCpf').resolves(false);
       });
       after(() => {
         userModels.create.restore();
-        serviceHelpers.validateBody.restore();
+        serviceHelpers.validateRegisterBody.restore();
         bcrypt.hash.restore();
       });
       it('should call bcrypt.hash() to encrypt password', async () => {

@@ -9,6 +9,14 @@ const newUserBody = Joi.object({
     .required(),
 });
 
+const loginBody = Joi.object({
+  cpf: Joi.number()
+    .required(),
+  password: Joi.string()
+    .required(),
+});
+
 module.exports = {
   newUserBody,
+  loginBody,
 };

@@ -4,7 +4,7 @@ const CustomError = require('../utils/CustomError');
 const serviceHelpers = require('./serviceHelpers');
 
 const create = async (body) => {
-  const bodyIsValid = serviceHelpers.validateBody(body);
+  const bodyIsValid = serviceHelpers.validateRegisterBody(body);
   if (bodyIsValid !== true) throw bodyIsValid;
   const { name, cpf, password } = body;
   const alreadyRegistered = await userModels.findByCpf(cpf);
