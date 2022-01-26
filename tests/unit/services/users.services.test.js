@@ -8,57 +8,70 @@ const {
 } = require('mocha');
 const { expect, use } = require('chai');
 const userServices = require('../../../services/userServices');
+const serviceHelpers = require('../../../services/serviceHelpers');
 const testValues = require('../utils/testValues.json');
 const userModels = require('../../../models/userModels');
-const CustomError = require('../../../utils/CustomError');
-const statusCode = require('../../../utils/statusCode.json');
 
-use(require('chai-as-promised'));
 use(require('sinon-chai'));
+use(require('chai-as-promised'));
 
 describe('SERVICES', async () => {
   const {
-    INVALID_CPF,
     INVALID_NAME,
     VALID_CPF,
     VALID_NAME,
   } = testValues;
-  describe('validateBody()', async () => {
-    describe('If the body is wrong', async () => {
-      it('should throw an CustomError if there`s missing data', async () => {
-        expect(() => userServices.validateBody({ cpf: undefined, name: VALID_NAME }))
-          .to.throw('Missing CPF or NAME field.')
-          .and.be.an.instanceOf(CustomError)
-          .and.have.property('status', statusCode.BAD_REQUEST);
-        expect(() => userServices.validateBody({ cpf: VALID_CPF, name: undefined }))
-          .to.throw('Missing CPF or NAME field.')
-          .and.be.an.instanceOf(CustomError)
-          .and.have.property('status', statusCode.BAD_REQUEST);
+
+  describe('create()', async () => {
+    describe('if the user is wrong', async () => {
+      const badBody = {
+        name: INVALID_NAME,
+        cpf: VALID_CPF,
+      };
+      before(() => {
+        sinon.stub(serviceHelpers, 'validateBody').returns(new Error('foo'));
+        sinon.stub(userModels, 'create').resolves(true);
       });
-      it('should throw an CustomError if CPF is invalid', async () => {
-        expect(() => userServices.validateBody({ cpf: INVALID_CPF, name: VALID_NAME }))
-          .to.throw('Invalid CPF format.')
-          .and.be.an.instanceOf(CustomError)
-          .and.have.property('status', statusCode.BAD_REQUEST);
+      after(() => {
+        serviceHelpers.validateBody.restore();
+        userModels.create.restore();
       });
-      it('should throw an CustomError if NAME is invalid', async () => {
-        expect(() => userServices.validateBody({ cpf: VALID_CPF, name: INVALID_NAME }))
-          .to.throw('Invalid NAME format.')
-          .and.be.an.instanceOf(CustomError)
-          .and.have.property('status', statusCode.BAD_REQUEST);
+      it('should call validateBody()', async () => {
+        await expect(userServices.create(badBody))
+          .to.eventually.be.rejectedWith('foo')
+          .then(() => {
+            expect(serviceHelpers.validateBody.calledWith(badBody)).to.be.equal(true);
+          });
+      });
+      it('should not call userModels.create()', async () => {
+        await expect(userServices.create(badBody))
+          .to.be.rejectedWith('foo')
+          .then(() => {
+            expect(userModels.create).to.have.not.been.called;
+          });
+      });
+      it('should throw an error', async () => {
+        await expect(userServices.create(badBody))
+          .to.eventually.throw;
+        // should search if this is the best way to do it
       });
     });
-    describe('If the body is right', async () => {
-      before(async () => {
-        sinon.stub(userModels, 'findByCpf').resolves(null);
+    describe('if the user is right', async () => {
+      const goodBody = {
+        name: VALID_NAME,
+        cpf: VALID_CPF,
+      };
+      before(() => {
+        sinon.stub(userModels, 'create').resolves(true);
+        sinon.stub(serviceHelpers, 'validateBody').returns(true);
       });
-      after(async () => {
-        userModels.findByCpf.restore();
+      after(() => {
+        userModels.create.restore();
+        serviceHelpers.validateBody.restore();
       });
-      it('should return nothing', async () => {
-        const result = await userServices.validateBody({ cpf: VALID_CPF, name: VALID_NAME });
-        // eslint-disable-next-line no-unused-expressions
-        expect(result).to.be.undefined;
+      it('should call userModels.create()', async () => {
+        await expect(userServices.create(goodBody));
+        expect(userModels.create).to.have.been.called;
       });
     });
   });
