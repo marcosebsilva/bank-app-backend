@@ -7,17 +7,19 @@ const {
   after,
 } = require('mocha');
 const { expect, use } = require('chai');
+const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const userServices = require('../../../services/userServices');
 const serviceHelpers = require('../../../services/serviceHelpers');
 const userModels = require('../../../models/userModels');
 const CustomError = require('../../../utils/CustomError');
+const statusCode = require('../../../utils/statusCode.json');
 
 use(require('sinon-chai'));
 use(require('chai-as-promised'));
 
 describe('SERVICES', async () => {
-  describe.only('create()', async () => {
+  describe('create()', async () => {
     let spyCreate;
     before(() => {
       spyCreate = sinon.spy(userModels, 'create');
@@ -27,7 +29,7 @@ describe('SERVICES', async () => {
     });
     describe('if the body is wrong', async () => {
       before(() => {
-        sinon.stub(serviceHelpers, 'validateRegisterBody').returns(new CustomError('foo', 'bar'));
+        sinon.stub(serviceHelpers, 'validateRegisterBody').returns(new CustomError());
       });
       after(() => {
         serviceHelpers.validateRegisterBody.restore();
@@ -49,7 +51,7 @@ describe('SERVICES', async () => {
       });
       it('should be rejected with a CustomError', async () => {
         await expect(userServices.create({}))
-          .to.eventually.be.rejectedWith('foo')
+          .to.eventually.be.rejected
           .and.be.an.instanceOf(CustomError);
         // should search if this is the best way to do it
       });
@@ -77,11 +79,11 @@ describe('SERVICES', async () => {
             expect(spyCreate).to.have.not.been.called;
           });
       });
-      it('should be rejected with the right error', async () => {
+      it('should be rejected with the right CustomError', async () => {
         await expect(userServices.create({}))
           .to.eventually.rejectedWith('User already registered')
           .and.be.an.instanceOf(CustomError)
-          .and.have.property('status', 409);
+          .and.have.property('status', statusCode.ALREADY_REGISTERED);
       });
     });
     describe('if the body is right', async () => {
@@ -104,6 +106,97 @@ describe('SERVICES', async () => {
       it('should call userModels.create()', async () => {
         await userServices.create({});
         expect(userModels.create).to.have.been.called;
+      });
+    });
+  });
+  describe('login()', async () => {
+    describe('if the body is wrong', async () => {
+      before(() => {
+        sinon.stub(serviceHelpers, 'validateLoginBody').returns(new CustomError());
+      });
+      after(() => {
+        serviceHelpers.validateLoginBody.restore();
+      });
+      it('should be a promise', async () => {
+        expect(userServices.login({})).to.be.a('promise');
+      });
+      it('should be rejected with an CustomError', async () => {
+        await expect(userServices.login({}))
+          .to.eventually.be.rejected
+          .and.be.an.instanceOf(CustomError);
+      });
+      it('should have called validateLoginBody()', async () => {
+        await expect(userServices.login({}))
+          .to.eventually.be.rejected
+          .then(() => {
+            expect(serviceHelpers.validateLoginBody).to.have.been.called;
+          });
+      });
+    });
+    describe('if the CPF does not exists', async () => {
+      before(() => {
+        sinon.stub(serviceHelpers, 'validateLoginBody').returns(true);
+        sinon.stub(userModels, 'findByCpf').resolves(null);
+      });
+      after(() => {
+        serviceHelpers.validateLoginBody.restore();
+        userModels.findByCpf.restore();
+      });
+      it('should be a promise', async () => {
+        expect(userServices.login({})).to.be.a('promise');
+      });
+      it('should be rejected with the right CustomError', async () => {
+        await expect(userServices.login({}))
+          .to.eventually.be.rejectedWith('User not found.')
+          .and.be.an.instanceOf(CustomError)
+          .and.have.property('status', statusCode.NOT_FOUND);
+      });
+    });
+    describe('if the password is wrong', async () => {
+      before(() => {
+        sinon.stub(serviceHelpers, 'validateLoginBody').returns(true);
+        sinon.stub(userModels, 'findByCpf').resolves(true);
+        sinon.stub(bcrypt, 'compare').resolves(false);
+      });
+      after(() => {
+        bcrypt.compare.restore();
+        userModels.findByCpf.restore();
+        serviceHelpers.validateLoginBody.restore();
+      });
+      it('should be a promise', async () => {
+        expect(userServices.login({})).to.be.a('promise');
+      });
+      it('should be rejected with the right CustomError', async () => {
+        await expect(userServices.login({}))
+          .to.eventually.be.rejectedWith('Wrong password.')
+          .and.be.an.instanceOf(CustomError)
+          .and.have.property('status', statusCode.UNAUTHORIZED);
+      });
+    });
+    describe('if the all creals are right', async () => {
+      const testSecret = 'ME_VERY_SECURE';
+      before(() => {
+        const validToken = jwt.sign('foo', testSecret);
+        sinon.stub(serviceHelpers, 'validateLoginBody').returns(true);
+        sinon.stub(userModels, 'findByCpf').resolves(true);
+        sinon.stub(bcrypt, 'compare').resolves(true);
+        sinon.stub(jwt, 'sign').returns(validToken);
+      });
+      after(() => {
+        serviceHelpers.validateLoginBody.restore();
+        userModels.findByCpf.restore();
+        bcrypt.compare.restore();
+      });
+      it('should be a promise', async () => {
+        expect(userServices.login({})).to.be.a('promise');
+      });
+      it('should be resolved with a valid jwt token', async () => {
+        const result = await userServices.login({});
+        const isAToken = jwt.verify(result, testSecret, (err) => {
+          if (err) return false;
+          return true;
+        });
+        expect(isAToken).to.be.equal(true);
       });
     });
   });
