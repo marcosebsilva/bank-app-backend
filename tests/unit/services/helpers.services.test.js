@@ -5,7 +5,7 @@ const {
 } = require('mocha');
 const { expect } = require('chai');
 const serviceHelpers = require('../../../services/serviceHelpers');
-const testValues = require('../utils/testValues.json');
+const testValues = require('../utils/testValues');
 const CustomError = require('../../../utils/CustomError');
 const statusCode = require('../../../utils/statusCode.json');
 

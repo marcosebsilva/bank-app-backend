@@ -7,9 +7,10 @@ const {
   after,
 } = require('mocha');
 const { expect, use } = require('chai');
+const bcrypt = require('bcrypt');
 const userServices = require('../../../services/userServices');
 const serviceHelpers = require('../../../services/serviceHelpers');
-const testValues = require('../utils/testValues.json');
+const testValues = require('../utils/testValues');
 const userModels = require('../../../models/userModels');
 const CustomError = require('../../../utils/CustomError');
 
@@ -21,13 +22,15 @@ describe('SERVICES', async () => {
     INVALID_NAME,
     VALID_CPF,
     VALID_NAME,
+    VALID_PASSWORD,
   } = testValues;
 
   describe('create()', async () => {
-    describe('if the user is wrong', async () => {
+    describe('if the body is wrong', async () => {
       const badBody = {
         name: INVALID_NAME,
         cpf: VALID_CPF,
+        password: VALID_PASSWORD,
       };
       before(() => {
         sinon.stub(serviceHelpers, 'validateBody').returns(new Error('foo'));
@@ -63,6 +66,7 @@ describe('SERVICES', async () => {
       const badBody = {
         name: INVALID_NAME,
         cpf: VALID_CPF,
+        password: VALID_PASSWORD,
       };
       before(() => {
         sinon.stub(userModels, 'findByCpf').resolves(true);
@@ -88,11 +92,13 @@ describe('SERVICES', async () => {
           .and.have.property('status', 409);
       });
     });
-    describe('if the user is right', async () => {
+    describe('if the body is right', async () => {
       const goodBody = {
         name: VALID_NAME,
         cpf: VALID_CPF,
+        password: VALID_PASSWORD,
       };
+      const spyBcrypt = sinon.spy(bcrypt, 'hash');
       before(() => {
         sinon.stub(userModels, 'create').resolves(true);
         sinon.stub(serviceHelpers, 'validateBody').returns(true);
@@ -101,9 +107,14 @@ describe('SERVICES', async () => {
       after(() => {
         userModels.create.restore();
         serviceHelpers.validateBody.restore();
+        bcrypt.hash.restore();
+      });
+      it('should call bcrypt.hash() to encrypt password', async () => {
+        await userServices.create(goodBody);
+        expect(spyBcrypt).to.have.been.called;
       });
       it('should call userModels.create()', async () => {
-        await expect(userServices.create(goodBody));
+        await userServices.create(goodBody);
         expect(userModels.create).to.have.been.called;
       });
     });
