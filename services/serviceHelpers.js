@@ -1,6 +1,6 @@
 const CustomError = require('../utils/CustomError');
 const schemas = require('../utils/joi-schemas');
-const statusCode = require('../utils/statusCode.json');
+const statusCode = require('../utils/statusCode');
 
 const validateBody = (body) => {
   const { error } = schemas.newUserBody.validate(body);
