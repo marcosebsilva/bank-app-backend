@@ -2,10 +2,10 @@
   "name": "back-end",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "api/server.js",
   "scripts": {
-    "dev": "nodemon index.js",
-    "start": "node index.js",
+    "dev": "nodemon .",
+    "start": "node .",
     "test": "npx mocha tests/unit/*$NAME*/**/*.test.js"
   },
   "author": "dusdoom.dev@gmail.com",
@@ -27,8 +27,10 @@
   "dependencies": {
     "bcrypt": "^5.0.1",
     "body-parser": "^1.19.1",
+    "dotenv": "^14.3.2",
     "express": "^4.17.2",
     "joi": "^17.5.0",
+    "jsonwebtoken": "^8.5.1",
     "mongodb": "^4.3.1",
     "mongodb-memory-server": "^8.2.0",
     "sinon-chai": "^3.7.0"
