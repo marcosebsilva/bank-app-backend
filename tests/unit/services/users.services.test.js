@@ -174,7 +174,7 @@ describe('SERVICES', async () => {
           .and.have.property('status', statusCode.UNAUTHORIZED);
       });
     });
-    describe('if the all creals are right', async () => {
+    describe('if the all credentials are right', async () => {
       before(() => {
         sinon.stub(serviceHelpers, 'validateLoginBody').returns(true);
         sinon.stub(userModels, 'findByCpf').resolves(true);
