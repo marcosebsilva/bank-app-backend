@@ -1,12 +1,13 @@
+/* eslint-disable no-unused-expressions */
 const sinon = require('sinon');
 const {
   describe,
   it,
   before,
   after,
+  afterEach,
 } = require('mocha');
 const { expect, use } = require('chai');
-const CustomError = require('../../../utils/CustomError');
 const userServices = require('../../../services/userServices');
 const userControllers = require('../../../controllers/userController');
 const statusCode = require('../../../utils/statusCode.json');
@@ -22,20 +23,24 @@ before(() => {
   response.sendStatus = sinon.stub().returns(response);
   response.json = sinon.stub().returns();
 });
+
+afterEach(() => {
+  request.body = {};
+});
+
 describe('CONTROLLERS', async () => {
   describe('create()', async () => {
-    describe('When the request is bad', async () => {
-      const genericError = new CustomError('TEST ERROR', 111);
+    describe('When the request is malformed', async () => {
       before(() => {
         request.body = {};
-        sinon.stub(userServices, 'create').throws(genericError);
+        sinon.stub(userServices, 'create').rejects();
       });
       after(() => {
         userServices.create.restore();
       });
       it('should call error middleware', async () => {
         await userControllers.create(request, response, next);
-        expect(next).to.have.been.calledWith(genericError);
+        expect(next).to.have.been.called;
       });
     });
     describe('if the body is right', () => {
