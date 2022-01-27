@@ -17,12 +17,12 @@ const create = async (body) => {
 const login = async (body) => {
   const bodyIsValid = serviceHelpers.validateLoginBody(body);
   if (bodyIsValid !== true) throw bodyIsValid;
-  const foundUser = await userModels.findByCpf(body.cpf);
-  if (!foundUser) throw new CustomError('User not found.', statusCode.NOT_FOUND);
-  const checkPassword = await bcrypt.compare(body.password, foundUser.password);
+  const { account_owner: accountOwner } = await userModels.findByCpf(body.cpf);
+  if (!accountOwner) throw new CustomError('User not found.', statusCode.NOT_FOUND);
+  const checkPassword = await bcrypt.compare(body.password, accountOwner.password);
   if (!checkPassword) throw new CustomError('Wrong password.', statusCode.UNAUTHORIZED);
 
-  const { password, ...verifiedUser } = foundUser;
+  const { password, ...verifiedUser } = accountOwner;
 
   const accessToken = authService.generateToken(verifiedUser);
 
