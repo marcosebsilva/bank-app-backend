@@ -14,6 +14,7 @@ const serviceHelpers = require('../../../services/serviceHelpers');
 const userModels = require('../../../models/userModels');
 const CustomError = require('../../../utils/CustomError');
 const statusCode = require('../../../utils/statusCode.json');
+const testValues = require('../utils/testValues');
 
 use(require('sinon-chai'));
 use(require('chai-as-promised'));
@@ -174,13 +175,11 @@ describe('SERVICES', async () => {
       });
     });
     describe('if the all creals are right', async () => {
-      const testSecret = 'ME_VERY_SECURE';
       before(() => {
-        const validToken = jwt.sign('foo', testSecret);
         sinon.stub(serviceHelpers, 'validateLoginBody').returns(true);
         sinon.stub(userModels, 'findByCpf').resolves(true);
         sinon.stub(bcrypt, 'compare').resolves(true);
-        sinon.stub(jwt, 'sign').returns(validToken);
+        sinon.stub(jwt, 'sign').returns(testValues.validToken);
       });
       after(() => {
         serviceHelpers.validateLoginBody.restore();
@@ -192,7 +191,7 @@ describe('SERVICES', async () => {
       });
       it('should be resolved with a valid jwt token', async () => {
         const result = await userServices.login({});
-        const isAToken = jwt.verify(result, testSecret, (err) => {
+        const isAToken = jwt.verify(result, testValues.SECRET_KEY, (err) => {
           if (err) return false;
           return true;
         });
