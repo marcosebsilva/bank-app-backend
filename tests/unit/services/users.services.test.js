@@ -156,7 +156,7 @@ describe('SERVICES', async () => {
     describe('if the password is wrong', async () => {
       before(() => {
         sinon.stub(serviceHelpers, 'validateLoginBody').returns(true);
-        sinon.stub(userModels, 'findByCpf').resolves(true);
+        sinon.stub(userModels, 'findByCpf').resolves({ account_owner: { password: '' } });
         sinon.stub(bcrypt, 'compare').resolves(false);
       });
       after(() => {
@@ -177,9 +177,9 @@ describe('SERVICES', async () => {
     describe('if the all credentials are right', async () => {
       before(() => {
         sinon.stub(serviceHelpers, 'validateLoginBody').returns(true);
-        sinon.stub(userModels, 'findByCpf').resolves(true);
+        sinon.stub(userModels, 'findByCpf').resolves({ account_owner: { password: '' } });
         sinon.stub(bcrypt, 'compare').resolves(true);
-        sinon.stub(jwt, 'sign').returns(testValues.validToken);
+        sinon.stub(jwt, 'sign').returns(testValues.EXAMPLE_TOKEN);
       });
       after(() => {
         serviceHelpers.validateLoginBody.restore();
