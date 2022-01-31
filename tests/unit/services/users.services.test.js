@@ -5,16 +5,17 @@ const {
   it,
   before,
   after,
+  afterEach,
 } = require('mocha');
 const { expect, use } = require('chai');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const userServices = require('../../../services/userServices');
-const serviceHelpers = require('../../../services/serviceHelpers');
-const userModels = require('../../../models/userModels');
+const userModels = require('../../../models/models');
 const CustomError = require('../../../utils/CustomError');
 const statusCode = require('../../../utils/statusCode.json');
 const testValues = require('../utils/testValues');
+const schemas = require('../../../utils/joi-schemas');
 
 use(require('sinon-chai'));
 use(require('chai-as-promised'));
@@ -28,21 +29,8 @@ describe('SERVICES', async () => {
     after(() => {
       spyCreate.restore();
     });
+
     describe('if the body is wrong', async () => {
-      before(() => {
-        sinon.stub(serviceHelpers, 'validateRegisterBody').returns(new CustomError());
-      });
-      after(() => {
-        serviceHelpers.validateRegisterBody.restore();
-        userModels.create.restore();
-      });
-      it('should call validateRegisterBody()', async () => {
-        await expect(userServices.create({}))
-          .to.eventually.be.rejected
-          .then(() => {
-            expect(serviceHelpers.validateRegisterBody).to.have.been.calledWith({});
-          });
-      });
       it('should not call userModels.create()', async () => {
         await expect(userServices.create({}))
           .to.be.rejected
@@ -54,24 +42,16 @@ describe('SERVICES', async () => {
         await expect(userServices.create({}))
           .to.eventually.be.rejected
           .and.be.an.instanceOf(CustomError);
-        // should search if this is the best way to do it
       });
     });
     describe('if the user is already registered', async () => {
       before(() => {
         sinon.stub(userModels, 'findByCpf').resolves(true);
-        sinon.stub(serviceHelpers, 'validateRegisterBody').returns(true);
+        sinon.stub(schemas.newUserBody, 'validate').returns(true);
       });
       after(() => {
+        schemas.newUserBody.validate.restore();
         userModels.findByCpf.restore();
-        serviceHelpers.validateRegisterBody.restore();
-      });
-      it('should call userModes.findByCpf', async () => {
-        await expect(userServices.create({}))
-          .to.be.rejected
-          .then(() => {
-            expect(userModels.findByCpf).to.have.been.called;
-          });
       });
       it('should not call userModels.create()', async () => {
         await expect(userServices.create({}))
@@ -89,16 +69,14 @@ describe('SERVICES', async () => {
     });
     describe('if the body is right', async () => {
       before(() => {
-        sinon.stub(serviceHelpers, 'validateRegisterBody').returns(true);
+        sinon.stub(schemas.newUserBody, 'validate').returns(true);
         sinon.stub(bcrypt, 'hash').resolves(true);
-        sinon.stub(userModels, 'create').resolves(true);
         sinon.stub(userModels, 'findByCpf').resolves(false);
       });
       after(() => {
-        serviceHelpers.validateRegisterBody.restore();
+        schemas.newUserBody.validate.restore();
         userModels.findByCpf.restore();
         bcrypt.hash.restore();
-        userModels.create.restore();
       });
       it('should call bcrypt.hash() to encrypt password', async () => {
         await userServices.create({});
@@ -113,10 +91,10 @@ describe('SERVICES', async () => {
   describe('login()', async () => {
     describe('if the body is wrong', async () => {
       before(() => {
-        sinon.stub(serviceHelpers, 'validateLoginBody').returns(new CustomError());
+        sinon.stub(schemas.loginBody, 'validate').returns({ error: { message: 'test' } });
       });
       after(() => {
-        serviceHelpers.validateLoginBody.restore();
+        schemas.loginBody.validate.restore();
       });
       it('should be a promise', async () => {
         expect(userServices.login({})).to.be.a('promise');
@@ -126,21 +104,21 @@ describe('SERVICES', async () => {
           .to.eventually.be.rejected
           .and.be.an.instanceOf(CustomError);
       });
-      it('should have called validateLoginBody()', async () => {
+      it('should have called schemas.loginBody.validate()', async () => {
         await expect(userServices.login({}))
           .to.eventually.be.rejected
           .then(() => {
-            expect(serviceHelpers.validateLoginBody).to.have.been.called;
+            expect(schemas.loginBody.validate).to.have.been.called;
           });
       });
     });
     describe('if the CPF does not exists', async () => {
       before(() => {
-        sinon.stub(serviceHelpers, 'validateLoginBody').returns(true);
+        sinon.stub(schemas.loginBody, 'validate').returns(true);
         sinon.stub(userModels, 'findByCpf').resolves(null);
       });
       after(() => {
-        serviceHelpers.validateLoginBody.restore();
+        schemas.loginBody.validate.restore();
         userModels.findByCpf.restore();
       });
       it('should be a promise', async () => {
@@ -155,14 +133,14 @@ describe('SERVICES', async () => {
     });
     describe('if the password is wrong', async () => {
       before(() => {
-        sinon.stub(serviceHelpers, 'validateLoginBody').returns(true);
+        sinon.stub(schemas.loginBody, 'validate').returns(true);
         sinon.stub(userModels, 'findByCpf').resolves({ account_owner: { password: '' } });
         sinon.stub(bcrypt, 'compare').resolves(false);
       });
       after(() => {
         bcrypt.compare.restore();
         userModels.findByCpf.restore();
-        serviceHelpers.validateLoginBody.restore();
+        schemas.loginBody.validate.restore();
       });
       it('should be a promise', async () => {
         expect(userServices.login({})).to.be.a('promise');
@@ -176,13 +154,13 @@ describe('SERVICES', async () => {
     });
     describe('if the all credentials are right', async () => {
       before(() => {
-        sinon.stub(serviceHelpers, 'validateLoginBody').returns(true);
+        sinon.stub(schemas.loginBody, 'validate').returns(true);
         sinon.stub(userModels, 'findByCpf').resolves({ account_owner: { password: '' } });
         sinon.stub(bcrypt, 'compare').resolves(true);
         sinon.stub(jwt, 'sign').returns(testValues.EXAMPLE_TOKEN);
       });
       after(() => {
-        serviceHelpers.validateLoginBody.restore();
+        schemas.loginBody.validate.restore();
         userModels.findByCpf.restore();
         bcrypt.compare.restore();
       });
@@ -196,6 +174,72 @@ describe('SERVICES', async () => {
           return true;
         });
         expect(isAToken).to.be.equal(true);
+      });
+    });
+  });
+  describe('transfer()', async () => {
+    describe('it should throw an CustomError if', async () => {
+      before(() => {
+        sinon.stub(userModels, 'addCredit').resolves({ insertedId: null });
+      });
+
+      after(() => {
+        userModels.addCredit.restore();
+      });
+      afterEach(() => {
+        schemas.depositBody.validate.restore();
+      });
+      it('there`s invalid data', async () => {
+        sinon.stub(schemas.depositBody, 'validate').returns({ error: { message: '' } });
+
+        await expect(userServices.transfer({}))
+          .to.eventually.be.rejected
+          .and.be.an.instanceOf(CustomError);
+      });
+      it('the user doesnt have enough credit', async () => {
+        sinon.stub(schemas.depositBody, 'validate').returns(true);
+        sinon.stub(userModels, 'findByCpf').resolves({
+          credit: 0,
+        });
+
+        await expect(userServices.transfer({ body: { cpf: testValues.VALID_CPF, quantity: 300 } }))
+          .to.eventually.be.rejected
+          .and.be.an.instanceOf(CustomError);
+
+        userModels.findByCpf.restore();
+      });
+      it('the destination doesn`t exist', async () => {
+        sinon.stub(schemas.depositBody, 'validate').returns(true);
+        sinon.stub(userModels, 'findByCpf').resolves({
+          credit: 500,
+        });
+
+        await expect(userServices.transfer({ body: { cpf: testValues.VALID_CPF, quantity: 300 } }))
+          .to.eventually.be.rejected
+          .and.be.an.instanceOf(CustomError)
+          .then(() => {
+            expect(userModels.addCredit).to.have.been.called;
+          });
+
+        userModels.findByCpf.restore();
+      });
+    });
+    describe('if data is ok', async () => {
+      before(() => {
+        sinon.stub(userModels, 'addCredit').resolves({ insertedId: true });
+        sinon.stub(schemas.depositBody, 'validate').returns(true);
+        sinon.stub(userModels, 'findByCpf').resolves({
+          credit: 500,
+        });
+      });
+      after(() => {
+        userModels.addCredit.restore();
+        schemas.depositBody.validate.restore();
+        userModels.findByCpf.restore();
+      });
+      it('should return nothing', async () => {
+        await expect(userServices.transfer({ body: { cpf: testValues.VALID_CPF, quantity: 300 } }))
+          .to.eventually.be.fulfilled;
       });
     });
   });

@@ -86,4 +86,30 @@ describe('CONTROLLERS', async () => {
       });
     });
   });
+  describe.only('transfer()', async () => {
+    describe('When the request is malformed', async () => {
+      before(() => {
+        sinon.stub(userServices, 'transfer').rejects();
+      });
+      after(() => {
+        userServices.transfer.restore();
+      });
+      it('should call error middleware', async () => {
+        await userControllers.transfer(request, response, next);
+        expect(next).to.have.been.called;
+      });
+    });
+    describe('When the request is right', () => {
+      before(() => {
+        sinon.stub(userServices, 'transfer').resolves({});
+      });
+      after(() => {
+        userServices.transfer.restore();
+      });
+      it('should return status 201', async () => {
+        await userControllers.transfer(request, response, next);
+        expect(response.sendStatus).to.have.been.calledWith(statusCode.OK);
+      });
+    });
+  });
 });

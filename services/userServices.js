@@ -1,13 +1,13 @@
 const bcrypt = require('bcrypt');
-const userModels = require('../models/userModels');
+const userModels = require('../models/models');
 const CustomError = require('../utils/CustomError');
-const serviceHelpers = require('./serviceHelpers');
 const statusCode = require('../utils/statusCode.json');
 const authService = require('./authService');
+const schemas = require('../utils/joi-schemas');
 
 const create = async (body) => {
-  const bodyIsValid = serviceHelpers.validateRegisterBody(body);
-  if (bodyIsValid !== true) throw bodyIsValid;
+  const { error } = schemas.newUserBody.validate(body, { convert: false });
+  if (error) throw new CustomError(error.message, statusCode.BAD_REQUEST);
   const foundUser = await userModels.findByCpf(body.cpf);
   if (foundUser) throw new CustomError('User already registered.', 409);
   const hashedPassword = await bcrypt.hash(body.password, 10);
@@ -15,8 +15,8 @@ const create = async (body) => {
 };
 
 const login = async (body) => {
-  const bodyIsValid = serviceHelpers.validateLoginBody(body);
-  if (bodyIsValid !== true) throw bodyIsValid;
+  const { error } = schemas.loginBody.validate(body, { convert: false });
+  if (error) throw new CustomError(error.message, statusCode.BAD_REQUEST);
   const foundUser = await userModels.findByCpf(body.cpf);
   if (!foundUser) throw new CustomError('User not found.', statusCode.NOT_FOUND);
   const checkPassword = await bcrypt.compare(body.password, foundUser.account_owner.password);
@@ -28,7 +28,21 @@ const login = async (body) => {
 
   return accessToken;
 };
+
+const transfer = async (body, user) => {
+  const { error } = schemas.depositBody.validate(body);
+  if (error) throw new CustomError(error.message, 400);
+
+  const foundUser = await userModels.findByCpf(user);
+  if (foundUser.credit < body.quantity) throw new CustomError('Not enough credit.', 400);
+
+  const makeTransfer = await userModels.addCredit(body.cpf, body.quantity);
+  if (!makeTransfer.insertedId) throw new CustomError('Destiny user not found.', 404);
+
+  await userModels.removeCredit(user, body.quantity);
+};
 module.exports = {
   create,
   login,
+  transfer,
 };

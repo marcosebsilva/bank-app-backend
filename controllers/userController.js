@@ -19,7 +19,16 @@ const login = async (req, res, next) => {
   }
 };
 
+const transfer = async (req, res, next) => {
+  try {
+    await userServices.transfer(req.body, req.user);
+    res.sendStatus(statusCode.OK);
+  } catch (error) {
+    next(error);
+  }
+};
 module.exports = {
   create,
   login,
+  transfer,
 };
