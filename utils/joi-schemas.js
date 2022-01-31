@@ -19,6 +19,12 @@ const passwordMessages = {
   'string.required': 'PASSWORD is required.',
 };
 
+const quantityMessages = {
+  'number.base': 'Quantity must be a number.',
+  'any.required': 'Quantity is required.',
+  'number.positive': 'Negative values not allowed.',
+};
+
 const newUserBody = Joi.object({
   cpf: Joi.string()
     .pattern(/^[0-9]*$/)
@@ -44,20 +50,27 @@ const loginBody = Joi.object({
     .messages(passwordMessages),
 });
 
-const depositBody = Joi.object({
+const transferBody = Joi.object({
   cpf: Joi.string()
     .required()
     .messages(cpfMessages),
-  quantity: Joi.string()
+  quantity: Joi.number()
+    .positive()
     .required()
-    .messages({
-      'number.base': 'Quantity must be a number.',
-      'any.required': 'Quantity is required.',
-    }),
+    .messages(quantityMessages),
+});
+
+const depositBody = Joi.object({
+  quantity: Joi.number()
+    .max(2000)
+    .positive()
+    .required()
+    .messages(quantityMessages),
 });
 
 module.exports = {
   newUserBody,
   loginBody,
+  transferBody,
   depositBody,
 };

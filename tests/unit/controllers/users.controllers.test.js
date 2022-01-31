@@ -86,7 +86,7 @@ describe('CONTROLLERS', async () => {
       });
     });
   });
-  describe.only('transfer()', async () => {
+  describe('transfer()', async () => {
     describe('When the request is malformed', async () => {
       before(() => {
         sinon.stub(userServices, 'transfer').rejects();
@@ -108,6 +108,32 @@ describe('CONTROLLERS', async () => {
       });
       it('should return status 201', async () => {
         await userControllers.transfer(request, response, next);
+        expect(response.sendStatus).to.have.been.calledWith(statusCode.OK);
+      });
+    });
+  });
+  describe('deposit()', async () => {
+    describe('When the request is malformed', async () => {
+      before(() => {
+        sinon.stub(userServices, 'deposit').rejects();
+      });
+      after(() => {
+        userServices.deposit.restore();
+      });
+      it('should call error middleware', async () => {
+        await userControllers.deposit(request, response, next);
+        expect(next).to.have.been.called;
+      });
+    });
+    describe('When the request is right', () => {
+      before(() => {
+        sinon.stub(userServices, 'deposit').resolves({});
+      });
+      after(() => {
+        userServices.deposit.restore();
+      });
+      it('should return status 201', async () => {
+        await userControllers.deposit(request, response, next);
         expect(response.sendStatus).to.have.been.calledWith(statusCode.OK);
       });
     });

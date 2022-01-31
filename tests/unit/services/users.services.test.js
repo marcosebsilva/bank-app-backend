@@ -178,67 +178,103 @@ describe('SERVICES', async () => {
     });
   });
   describe('transfer()', async () => {
-    describe('it should throw an CustomError if', async () => {
-      before(() => {
-        sinon.stub(userModels, 'addCredit').resolves({ insertedId: null });
-      });
-
-      after(() => {
-        userModels.addCredit.restore();
-      });
+    describe('When the body is bad', async () => {
       afterEach(() => {
-        schemas.depositBody.validate.restore();
+        schemas.transferBody.validate.restore();
       });
-      it('there`s invalid data', async () => {
-        sinon.stub(schemas.depositBody, 'validate').returns({ error: { message: '' } });
 
-        await expect(userServices.transfer({}))
-          .to.eventually.be.rejected
-          .and.be.an.instanceOf(CustomError);
-      });
-      it('the user doesnt have enough credit', async () => {
-        sinon.stub(schemas.depositBody, 'validate').returns(true);
-        sinon.stub(userModels, 'findByCpf').resolves({
-          credit: 0,
+      describe('if there`s invalid data', async () => {
+        before(() => {
+          sinon.stub(schemas.transferBody, 'validate').returns({ error: { message: '' } });
         });
-
-        await expect(userServices.transfer({ body: { cpf: testValues.VALID_CPF, quantity: 300 } }))
-          .to.eventually.be.rejected
-          .and.be.an.instanceOf(CustomError);
-
-        userModels.findByCpf.restore();
-      });
-      it('the destination doesn`t exist', async () => {
-        sinon.stub(schemas.depositBody, 'validate').returns(true);
-        sinon.stub(userModels, 'findByCpf').resolves({
-          credit: 500,
+        it('should be rejected with a custom error', async () => {
+          await expect(userServices.transfer({}))
+            .to.eventually.be.rejected
+            .and.be.an.instanceOf(CustomError);
         });
-
-        await expect(userServices.transfer({ body: { cpf: testValues.VALID_CPF, quantity: 300 } }))
-          .to.eventually.be.rejected
-          .and.be.an.instanceOf(CustomError)
-          .then(() => {
-            expect(userModels.addCredit).to.have.been.called;
+      });
+      describe('if the user doesnt have enought credit', async () => {
+        before(() => {
+          sinon.stub(schemas.transferBody, 'validate').returns(true);
+          sinon.stub(userModels, 'findByCpf').resolves({
+            credit: 0,
           });
+        });
 
-        userModels.findByCpf.restore();
+        after(() => {
+          userModels.findByCpf.restore();
+        });
+        it('should be rejected with a CustomError', async () => {
+          await expect(userServices.transfer({ cpf: testValues.VALID_CPF, quantity: 1500 }, ''))
+            .to.eventually.be.rejected
+            .and.be.an.instanceOf(CustomError);
+        });
+      });
+      describe('if the destination doesn`t exist', async () => {
+        before(() => {
+          sinon.stub(schemas.transferBody, 'validate').returns(true);
+          sinon.stub(userModels, 'findByCpf').resolves({
+            credit: 500,
+          });
+          sinon.stub(userModels, 'addCredit').resolves(null);
+        });
+
+        after(() => {
+          userModels.findByCpf.restore();
+          userModels.addCredit.restore();
+        });
+        it('the destination doesn`t exist', async () => {
+          await expect(userServices.transfer({ cpf: testValues.VALID_CPF, quantity: 300 }))
+            .to.eventually.be.rejected
+            .and.be.an.instanceOf(CustomError)
+            .then(() => {
+              expect(userModels.addCredit).to.have.been.called;
+            });
+        });
       });
     });
     describe('if data is ok', async () => {
       before(() => {
         sinon.stub(userModels, 'addCredit').resolves({ insertedId: true });
-        sinon.stub(schemas.depositBody, 'validate').returns(true);
+        sinon.stub(schemas.transferBody, 'validate').returns(true);
         sinon.stub(userModels, 'findByCpf').resolves({
           credit: 500,
         });
       });
       after(() => {
         userModels.addCredit.restore();
-        schemas.depositBody.validate.restore();
+        schemas.transferBody.validate.restore();
         userModels.findByCpf.restore();
       });
       it('should return nothing', async () => {
         await expect(userServices.transfer({ body: { cpf: testValues.VALID_CPF, quantity: 300 } }))
+          .to.eventually.be.fulfilled;
+      });
+    });
+  });
+  describe('deposit()', async () => {
+    describe('it should throw a CustomError if', async () => {
+      before(() => {
+        sinon.stub(schemas.depositBody, 'validate').returns({ error: { message: '' } });
+      });
+      after(() => {
+        schemas.depositBody.validate.restore();
+      });
+      it('the data is invalid', async () => {
+        await expect(userServices.deposit({}))
+          .to.eventually.be.rejected
+          .and.be.an.instanceOf(CustomError);
+      });
+    });
+    describe('when all data is ok', async () => {
+      before(() => {
+        sinon.stub(schemas.depositBody, 'validate').returns(false);
+      });
+      after(() => {
+        schemas.depositBody.validate.restore();
+      });
+      it('should return nothing', async () => {
+        await expect(userServices.deposit({ quantity: 300 }, ''))
           .to.eventually.be.fulfilled;
       });
     });

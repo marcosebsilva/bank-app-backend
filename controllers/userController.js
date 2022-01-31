@@ -27,8 +27,18 @@ const transfer = async (req, res, next) => {
     next(error);
   }
 };
+
+const deposit = async (req, res, next) => {
+  try {
+    await userServices.deposit(req.body, req.user);
+    res.sendStatus(statusCode.OK);
+  } catch (error) {
+    next(error);
+  }
+};
 module.exports = {
   create,
   login,
   transfer,
+  deposit,
 };
