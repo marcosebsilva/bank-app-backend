@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "nodemon .",
     "start": "node .",
-    "test": "npx mocha tests/unit/*$NAME*/**/*.test.js"
+    "test": "npx mocha tests/unit/*$LAYER*/**/*$NAME*.test.js",
+    "test:coverage": "nyc npm test"
   },
   "author": "dusdoom.dev@gmail.com",
   "license": "ISC",
@@ -22,6 +23,7 @@
     "eslint-plugin-react-hooks": "^4.3.0",
     "mocha": "^9.1.4",
     "nodemon": "^2.0.15",
+    "nyc": "^15.1.0",
     "sinon": "^12.0.1"
   },
   "dependencies": {
