@@ -31,23 +31,25 @@ const login = async (body) => {
 
 const transfer = async (body, user) => {
   const { error } = schemas.transferBody.validate(body);
-  if (error) throw new CustomError(error.message, 400);
+  if (error) throw new CustomError(error.message, statusCode.BAD_REQUEST);
 
   const foundUser = await userModels.findByCpf(user);
-  if (!foundUser) throw new CustomError('Bad login data.', 404);
-  if (foundUser.credit < body.quantity) throw new CustomError('Not enough credit.', 400);
+  if (!foundUser) throw new CustomError('Bad login data.', statusCode.NOT_FOUND);
+  if (foundUser.credit < body.quantity) throw new CustomError('Not enough credit.', statusCode.BAD_REQUEST);
 
   const makeTransfer = await userModels.addCredit(body.cpf, body.quantity);
-  if (!makeTransfer) throw new CustomError('Destiny user not found.', 404);
+  if (!makeTransfer) throw new CustomError('Destiny user not found.', statusCode.NOT_FOUND);
 
   await userModels.removeCredit(user, body.quantity);
 };
 
 const deposit = async (body, user) => {
   const { error } = schemas.depositBody.validate(body, { convert: false });
-  if (error) throw new CustomError(error.message, 400);
+  if (error) throw new CustomError(error.message, statusCode.BAD_REQUEST);
 
-  await userModels.addCredit(user, body.quantity);
+  const makeDeposit = await userModels.addCredit(user, body.quantity);
+
+  if (!makeDeposit) throw CustomError(`Unable to deposit to ${user}`, statusCode.BAD_REQUEST);
 };
 module.exports = {
   create,
