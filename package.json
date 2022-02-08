@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nodemon .",
     "start": "node .",
-    "test": "npx mocha tests/unit/*$LAYER*/**/*$NAME*.test.js",
+    "test": "npx mocha tests/unit/*$NAME*.test.js",
     "test:coverage": "nyc npm test"
   },
   "author": "dusdoom.dev@gmail.com",
