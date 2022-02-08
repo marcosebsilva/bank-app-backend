@@ -9,11 +9,11 @@ const {
 const { expect, use } = require('chai');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
-const userServices = require('../../../services/userServices');
-const userModels = require('../../../models/models');
-const CustomError = require('../../../utils/CustomError');
-const statusCode = require('../../../utils/statusCode.json');
-const testValues = require('../utils/testValues');
+const userServices = require('../../services/userServices');
+const userModels = require('../../models/models');
+const CustomError = require('../../utils/CustomError');
+const statusCode = require('../../utils/statusCode.json');
+const testValues = require('./utils/testValues');
 
 use(require('sinon-chai'));
 use(require('chai-as-promised'));

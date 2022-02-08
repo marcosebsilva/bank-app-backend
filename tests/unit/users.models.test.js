@@ -12,8 +12,8 @@ const { expect } = require('chai');
 const { MongoClient } = require('mongodb');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 const bcrypt = require('bcrypt');
-const usersModels = require('../../../models/models');
-const testValues = require('../utils/testValues');
+const usersModels = require('../../models/models');
+const testValues = require('./utils/testValues');
 
 let memoryServer;
 let mockConnection;

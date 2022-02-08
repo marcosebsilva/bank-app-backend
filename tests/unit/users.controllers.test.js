@@ -8,10 +8,10 @@ const {
   afterEach,
 } = require('mocha');
 const { expect, use } = require('chai');
-const userServices = require('../../../services/userServices');
-const userControllers = require('../../../controllers/userController');
-const statusCode = require('../../../utils/statusCode.json');
-const testValues = require('../utils/testValues');
+const userServices = require('../../services/userServices');
+const userControllers = require('../../controllers/userController');
+const statusCode = require('../../utils/statusCode.json');
+const testValues = require('./utils/testValues');
 
 use(require('sinon-chai'));
 
